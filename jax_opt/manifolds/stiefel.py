@@ -1,7 +1,6 @@
-import base_manifold
+from jax_opt.manifolds import base_manifold
 import jax
-from jax import vmap
-from utils import adj
+from jax_opt.manifolds.utils import adj
 jax.config.update('jax_enable_x64', True)
 
 
@@ -69,15 +68,14 @@ class StiefelManifold(base_manifold.Manifold):
             manifold wise inner product"""
 
         if self._metric == 'euclidean':
-            s_sq = vmap(jax.numpy.trace)(adj(vec1) @ vec2)[...,
-                                                           None,
-                                                           None]
+            s_sq = jax.numpy.trace(adj(vec1) @ vec2, axis1=-1, axis2=-2)[...,
+                                                                         None,
+                                                                         None]
         elif self._metric == 'canonical':
             G = jax.numpy.eye(u.shape[-2], dtype=u.dtype) - u @ adj(u) / 2
-            s_sq = vmap(jax.numpy.trace)(adj(vec1) @ G @ vec2)[...,
-                                                               None,
-                                                               None]
-        # return tf.cast(tf.math.real(s_sq), dtype=u.dtype)
+            s_sq = jax.numpy.trace(adj(vec1) @ G @ vec2, axis1=-1, axis2=-2)[...,
+                                                                             None,
+                                                                             None]
         return jax.numpy.real(s_sq)
 
     def proj(self, u, vec):
@@ -95,7 +93,7 @@ class StiefelManifold(base_manifold.Manifold):
             complex valued tensor of shape (..., n, p),
             a set of projected vectors"""
 
-        return vec - 0.5 * u @ (adj(u) @ vec - adj(vec) @ u)
+        return vec - 0.5 * u @ (adj(u) @ vec + adj(vec) @ u)
 
     def egrad_to_rgrad(self, u, egrad):
         """Returns the Riemannian gradient from an Euclidean gradient.
@@ -112,7 +110,7 @@ class StiefelManifold(base_manifold.Manifold):
             the set of Reimannian gradients."""
 
         if self._metric == 'euclidean':
-            return egrad - 0.5 * u @ (adj(u) @ egrad - adj(egrad) @ u)
+            return egrad - 0.5 * u @ (adj(u) @ egrad + adj(egrad) @ u)
 
         elif self._metric == 'canonical':
             return egrad - u @ adj(egrad) @ u
@@ -134,7 +132,7 @@ class StiefelManifold(base_manifold.Manifold):
         if self._retraction == 'svd':
             new_u = u + vec
             # _, v, w = tf.linalg.svd(new_u)
-            v, _, wh = jax.numpy.linalg.svd(new_u)
+            v, _, wh = jax.numpy.linalg.svd(new_u, full_matrices=False)
             return v @ wh
 
         elif self._retraction == 'cayley':
@@ -211,7 +209,7 @@ class StiefelManifold(base_manifold.Manifold):
 
         real_dtype = jax.numpy.float64 if dtype == jax.numpy.complex128 else jax.numpy.float32
 
-        rng_key, rng_subkeys = jax.random.split(rng_key, 2)
+        rng_key, *rng_subkeys = jax.random.split(rng_key, 3)
         u_real = jax.random.normal(rng_subkeys[0], shape, dtype=real_dtype)
         u_imag = jax.random.normal(rng_subkeys[1], shape, dtype=real_dtype)
         u = u_real + 1j * u_imag
@@ -237,7 +235,7 @@ class StiefelManifold(base_manifold.Manifold):
 
         real_dtype = jax.numpy.float64 if u.dtype == jax.numpy.complex128 else jax.numpy.float32
 
-        rng_key, rng_subkeys = jax.random.split(rng_key, 2)
+        rng_key, *rng_subkeys = jax.random.split(rng_key, 3)
         vec_real = jax.random.normal(rng_subkeys[0], u.shape, dtype=real_dtype)
         vec_imag = jax.random.normal(rng_subkeys[1], u.shape, dtype=real_dtype)
         vec = vec_real + 1j * vec_imag
@@ -259,9 +257,8 @@ class StiefelManifold(base_manifold.Manifold):
         Id = jax.numpy.eye(u.shape[-1], dtype=u.dtype)
         udagu = adj(u) @ u
         diff = Id - udagu
-        vectorize_norm = vmap(jax.numpy.linalg.norm)
-        diff_norm = vectorize_norm(diff)
-        udagu_norm = vectorize_norm(udagu)
-        Id_norm = vectorize_norm(Id)
-        rel_diff = jax.numpy.abs(diff_norm / tf.math.sqrt(Id_norm * udagu_norm))
+        diff_norm = jax.numpy.linalg.norm(diff, axis=(-1,-2))
+        udagu_norm = jax.numpy.linalg.norm(udagu, axis=(-1,-2))
+        Id_norm = jax.numpy.linalg.norm(Id, axis=(-1,-2))
+        rel_diff = jax.numpy.abs(diff_norm / jax.numpy.sqrt(Id_norm * udagu_norm))
         return tol > rel_diff

@@ -1,6 +1,11 @@
 import jax
 from jax import vmap
+jax.config.update('jax_enable_x64', True)
 
+
+#[TODO] Maybe look into and implement some more function like in
+# https://www.programcreek.com/python/?code=sharadmv%2Fdeepx%2Fdeepx-master%2Fdeepx%2Fbackend%2Fjax.py
+# https://github.com/sharadmv/deepx
 
 
 def adj(A):
@@ -13,7 +18,9 @@ def adj(A):
         complex valued tensor of shape (..., m, n),
         conjugate transpose matrix."""
 
-    transpose_A = vmap(jax.numpy.transpose)(A)
+    # THIS IS WRONG for matrix !!!!
+    ## transpose_A = vmap(jax.numpy.transpose)(A)
+    transpose_A = jax.numpy.swapaxes(A, -1, -2)
     return jax.numpy.conj(transpose_A)
 
 
