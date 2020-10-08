@@ -7,27 +7,27 @@ project
 │
 └───tests
 │
-└───tf_opt
+└───jax_opt
 │   │
 │   └───manifolds
 │   │   │   base_manifold.py
 │   │   │   stiefel.py
-│   │   │   ...
+│   │   │   util.py
 │   │  
 │   └───optimizers
-│       │   SGD.py
-│       │   Adam.py
-│       │   CG.py
+│       │   rsgd.py
+│       │   rmom.py
+│       │   radam.py
+│       │   CG.py  (Not here yet)
 │       │   ...
 │   
-└───jax_opt
+└───tf_opt ( fork from QGOpt )
 │   
 └───pytorch_opt
 │   
 └───disentangler
 │   │   tf_disentangling.py
 │   │   jax_disentangling.py
-│   │   pytorch_disentangling.py
 │
 └───mosesmove
     │   tri_splitter.py
@@ -61,6 +61,4 @@ project
   For example, to get the diagonal of a matrix, the norm of a tensor, ...
 
 #### TODO:
-- implemented jax disentangler
-- implemented jax optimizer, following the structure like tf optimizer. But of course this has to be in jax update rule.
 - setup test for optimizer and disentangler

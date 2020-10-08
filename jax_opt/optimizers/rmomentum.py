@@ -30,6 +30,7 @@ def rmomentum(step_size, manifold, mass):
         x = x - step_size(i) * velocity
         return x, velocity
         '''
+        x, velocity = state
         rgrad = manifold.egrad_to_rgrad(x, grad)
         # velocity = mass * velocity + rgrad  # both are in tangent space Tx
         velocity = mass * velocity + (1 - mass) * rgrad  # both are in tangent space Tx
@@ -39,7 +40,8 @@ def rmomentum(step_size, manifold, mass):
                                               -step_size(i) * velocity)
         return new_x, velocity
 
-    def get_params(x):
+    def get_params(state):
+        x, _ = state
         return x
 
     return init, update, get_params

@@ -198,7 +198,7 @@ def find_u(wf, loss_type, loss_para, opt_type, iters=10000, lr=0.5):
     if opt_type == 'rsgd':
         opt_init, opt_update, get_params = jax_opt.optimizers.rsgd(lr, manifold)
     elif opt_type == 'rmom':
-        opt_init, opt_update, get_params = jax_opt.optimizers.rmomentum(lr, manifold)
+        opt_init, opt_update, get_params = jax_opt.optimizers.rmomentum(lr, manifold, 0.95)
     elif opt_type == 'radam':
         opt_init, opt_update, get_params = jax_opt.optimizers.radam(lr, manifold)
     else:
@@ -246,4 +246,4 @@ if __name__ == '__main__':
     wf = U.dot(np.diag(S).dot(Vd)).reshape([4, 2, 2, 4])
 
     # find_u(wf, 'renyi', 2, 'radam', iters=100, lr=0.5)
-    u = find_u(wf, 'trunc', 6, 'radam', iters=100, lr=0.5)
+    u = find_u(wf, 'trunc', 6, 'rmom', iters=100, lr=0.5)

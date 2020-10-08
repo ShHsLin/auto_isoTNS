@@ -184,7 +184,7 @@ def find_u(wf, loss, loss_para, opt_type, iters=10000,
     if opt_type is None or opt_type == 'Adam':
         opt = qgo.optimizers.RAdam(manifold, lr, ams=False)
     elif opt_type == 'SGD' or opt_type =='EV':
-        opt = qgo.optimizers.RSGD(manifold, lr, momentum=0. )  #0.95)
+        opt = qgo.optimizers.RSGD(manifold, lr, momentum=0.95)
     else:
         raise
 
@@ -253,6 +253,6 @@ if __name__ == '__main__':
     S /= np.linalg.norm(S)
     test_tensor = U.dot(np.diag(S).dot(Vd)).reshape([4, 2, 2, 4])
 
-    wf, u, data = find_u(test_tensor, 'trunc', 6, 'Adam', 100, lr=0.5)
+    wf, u, data = find_u(test_tensor, 'trunc', 6, 'SGD', 100, lr=0.5)
     # wf, u, data = find_u(test_tensor, 'renyi', 2, 'Adam', 100, lr=0.5)
     print(data['errs'])
