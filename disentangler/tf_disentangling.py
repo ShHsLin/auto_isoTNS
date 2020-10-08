@@ -14,7 +14,7 @@ def renyi_entropy(p_i, alpha):
 @tf.function
 def get_renyi_entropy(wf, alpha):
     '''
-    compute the renyi-\alpha entanglement entropy of |wf>
+    compute the renyi-alpha entanglement entropy of |wf>
     Input:
         wf: of dimension (chi1, d1, d2, chi2)
 
@@ -56,7 +56,7 @@ def get_U_wf_renyi_entropy(U, wf, alpha):
     '''
     A wrapper function to reshape unitary U to rank-4 tensor
     tensor_U: of dimension (d1', d2', d1, d2)
-    and compute the renyi-\alpha entanglement entropy of U|wf>
+    and compute the renyi-alpha entanglement entropy of U|wf>
     notice that we pick the convention of
     " U_ij |wf>_j "
 
@@ -125,17 +125,22 @@ def opt_trunc_step(u, wf, bond_dimension):
 
 
 
-def find_u(wf, loss, loss_para, optimizer, iters=10000,
+def find_u(wf, loss, loss_para, opt_type, iters=10000,
            lr=0.5,):
     '''
     Inputs:
         wf: wavefunction/tensor to be disentangled.
             we assume it is of the shape (chi1, d1, d2, chi2)
-        loss: the loss function to be minimized.
-              one can specify the bond dimension, i.e.
-              the number of singular values to kept,
-              or the renyi-n entropy.
-        optimizer:
+        loss:
+            the loss function to be minimized.
+            (1.) truncation error (2.) Renyi-alpha entropy
+        loss_para:
+            When loss function == truncation error,
+            one should specify the bond dimension, i.e.
+            the number of singular values to kept,
+            When loss function == Renyi-alpha entropy,
+            one should specify the alhpa
+        opt_type:
         iters: number of iterations
         lr: the learning rate
     Outputs:
@@ -156,7 +161,7 @@ def find_u(wf, loss, loss_para, optimizer, iters=10000,
         raise NotImplementedError
 
 
-    if optimizer == 'EV':
+    if opt_type == 'EV':
         EV_alg = True
     else:
         EV_alg = False
@@ -170,16 +175,16 @@ def find_u(wf, loss, loss_para, optimizer, iters=10000,
     # u = tf.Variable(qgo.manifolds.complex_to_real(uc))
     #=================================#
 
-    # Riemannian Adam optimizer,
+    # Riemannian Adam,
     # we pass m that is an example of
     # complex Stiefel manifold to guide optimizer
     # how to perform optimization on complex
     # Stiefel manifold
     manifold = qgo.manifolds.StiefelManifold()
-    if optimizer is None or optimizer == 'Adam':
+    if opt_type is None or opt_type == 'Adam':
         opt = qgo.optimizers.RAdam(manifold, lr, ams=False)
-    elif optimizer == 'SGD' or optimizer =='EV':
-        opt = qgo.optimizers.RSGD(manifold, lr, momentum=0.95)
+    elif opt_type == 'SGD' or opt_type =='EV':
+        opt = qgo.optimizers.RSGD(manifold, lr, momentum=0. )  #0.95)
     else:
         raise
 
@@ -242,17 +247,12 @@ if __name__ == '__main__':
     import numpy as np
     np.random.seed(0)
 
-    # backend = 'tensorflow'
-    # test_tensor = tn.Node(np.random.rand(4, 2, 2, 4)*(1+1j),
-    #                       name='wf',
-    #                       axis_names=('chi1','d1','d2','chi2'),
-    #                       backend=backend
-    #                      )
-
-    test_tensor = np.random.rand(4, 2, 2, 4)*(1)
+    test_tensor = np.random.rand(4, 2, 2, 4) - 0.5 +\
+            1j*(np.random.rand(4, 2, 2, 4) - 0.5)
     U, S, Vd = np.linalg.svd(test_tensor.reshape([8, 8]))
     S /= np.linalg.norm(S)
     test_tensor = U.dot(np.diag(S).dot(Vd)).reshape([4, 2, 2, 4])
 
-    wf, u, data = find_u(test_tensor, 'trunc', 4, 'Adam', 100)
-    # wf, u, data = find_u(test_tensor, 'renyi', 0.5, 'Adam', 100)
+    wf, u, data = find_u(test_tensor, 'trunc', 6, 'Adam', 100, lr=0.5)
+    # wf, u, data = find_u(test_tensor, 'renyi', 2, 'Adam', 100, lr=0.5)
+    print(data['errs'])

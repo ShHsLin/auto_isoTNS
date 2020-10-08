@@ -176,18 +176,6 @@ def find_u(wf, loss_type, loss_para, opt_type, iters=10000, lr=0.5):
         wf: the original(?) wf
         u_opt: the optimal unitary to act on wf
         info: the information about the minimization process in disentangling.
-
-
-    opt = optimizers.sgd(learning_rate)
-    opt_state = opt.init(params)
-
-    def step(step, opt_state):
-      value, grads = jax.value_and_grad(loss_fn)(opt.get_params(opt_state))
-      opt_state = opt.update(step, grads, opt_state)
-      return value, opt_state
-
-    for step in range(num_steps):
-      value, opt_state = step(step, opt_state)
     '''
 
     chi1, d1, d2, chi2 = wf.shape
@@ -207,7 +195,15 @@ def find_u(wf, loss_type, loss_para, opt_type, iters=10000, lr=0.5):
 
     # manifold = jax_opt.manifolds.StiefelManifold(metric='euclidean', retraction='svd')
     manifold = jax_opt.manifolds.StiefelManifold()
-    opt_init, opt_update, get_params = jax_opt.optimizers.rsgd(lr, manifold)
+    if opt_type == 'rsgd':
+        opt_init, opt_update, get_params = jax_opt.optimizers.rsgd(lr, manifold)
+    elif opt_type == 'rmom':
+        opt_init, opt_update, get_params = jax_opt.optimizers.rmomentum(lr, manifold)
+    elif opt_type == 'radam':
+        opt_init, opt_update, get_params = jax_opt.optimizers.radam(lr, manifold)
+    else:
+        raise NotImplementedError
+
 
     # @jit
     def update(idx, opt_state, data):
@@ -249,5 +245,5 @@ if __name__ == '__main__':
     S /= np.linalg.norm(S)
     wf = U.dot(np.diag(S).dot(Vd)).reshape([4, 2, 2, 4])
 
-    find_u(wf, 'renyi', 2, 'rsgd', iters=100, lr=0.5)
-    # u = find_u(wf, 'trunc', 6, 'rsgd', iters=1000, lr=0.5)
+    # find_u(wf, 'renyi', 2, 'radam', iters=100, lr=0.5)
+    u = find_u(wf, 'trunc', 6, 'radam', iters=100, lr=0.5)

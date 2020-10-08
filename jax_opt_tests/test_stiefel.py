@@ -1,5 +1,4 @@
 import pytest
-import sys
 from jax_opt import manifolds
 from jax_opt_tests.test_manifolds import CheckManifolds
 
