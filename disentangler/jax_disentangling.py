@@ -1,17 +1,17 @@
-import tensorflow as tf
-import sys; sys.path.insert(0, '../tf_opt/')
-import QGOpt as qgo  ## tf_opt from QGOpt library
+import jax
+from jax import jit, grad
+import sys; sys.path.append('../')
+import jax_opt.optimizers
+import jax_opt.manifolds
 
-
-@tf.function
 def renyi_entropy(p_i, alpha):
-    if tf.abs(alpha - 1.) < 1e-4:
+    if jax.numpy.abs(alpha - 1.) < 1e-4:
         filtered_p_i = p_i[p_i > 1e-8]
-        return -tf.reduce_sum(filtered_p_i * tf.math.log(filtered_p_i) )
+        return -jax.numpy.sum(filtered_p_i * tf.math.log(filtered_p_i) )
     else:
-        return tf.math.log(tf.reduce_sum(tf.math.pow(p_i, alpha))) / ( 1. - alpha)
+        return jax.numpy.log(jax.numpy.sum(jax.numpy.power(p_i, alpha))) / ( 1. - alpha)
 
-@tf.function
+
 def get_renyi_entropy(wf, alpha):
     '''
     compute the renyi-alpha entanglement entropy of |wf>
@@ -22,13 +22,13 @@ def get_renyi_entropy(wf, alpha):
         entropy
         singular values
     '''
+
     dim_chi1, dim_d1, dim_d2, dim_chi2 = wf.shape
-    theta = tf.reshape(wf, [dim_chi1 * dim_d1, dim_d2 * dim_chi2])
-    sing_vals, _, _ = tf.linalg.svd(theta, full_matrices=False)
-    prob = tf.square(sing_vals)
+    theta = jax.numpy.reshape(wf, [dim_chi1 * dim_d1, dim_d2 * dim_chi2])
+    _, sing_vals, _ = jax.numpy.linalg.svd(theta, full_matrices=False)
+    prob = jax.numpy.square(sing_vals)
     return renyi_entropy(prob, alpha), sing_vals
 
-@tf.function
 def get_U_wf(U, wf):
     '''
     A wrapper function to reshape unitary U to rank-4 tensor
@@ -44,16 +44,16 @@ def get_U_wf(U, wf):
     Output:
         U_wf
     '''
+
     dim_chi1, dim_d1, dim_d2, dim_chi2 = wf.shape
-    tensor_U = tf.reshape(U, [dim_d1, dim_d2, dim_d1, dim_d2])
-    U_wf = tf.tensordot(tensor_U, wf, ([2, 3], [1, 2]))  ## d1',d2', chi1, chi2
-    U_wf = tf.transpose(U_wf, [2, 0, 1, 3]) ## chi1, d1', d2', chi2
+    tensor_U = jax.numpy.reshape(U, [dim_d1, dim_d2, dim_d1, dim_d2])
+    U_wf = jax.numpy.tensordot(tensor_U, wf, ([2, 3], [1, 2]))  ## d1',d2', chi1, chi2
+    U_wf = jax.numpy.transpose(U_wf, [2, 0, 1, 3]) ## chi1, d1', d2', chi2
     return U_wf
 
-
-@tf.function
-def get_U_wf_renyi_entropy(U, wf, alpha):
+def loss_renyi_entropy(U, wf, alpha):
     '''
+    Loss Function.
     A wrapper function to reshape unitary U to rank-4 tensor
     tensor_U: of dimension (d1', d2', d1, d2)
     and compute the renyi-alpha entanglement entropy of U|wf>
@@ -67,16 +67,46 @@ def get_U_wf_renyi_entropy(U, wf, alpha):
         loss
         sing_vals
     '''
+
     U_wf = get_U_wf(U, wf)
     loss, sing_vals = get_renyi_entropy(U_wf, alpha)
-    return loss, sing_vals
+    return loss
 
-@tf.function
+def loss_truncation(U, wf, bond_dimension):
+    '''
+    Loss Function.
+    A wrapper function to reshape unitary U to rank-4 tensor
+    tensor_U: of dimension (d1', d2', d1, d2)
+    and compute the renyi-alpha entanglement entropy of U|wf>
+    notice that we pick the convention of
+    " U_ij |wf>_j "
+
+    Input:
+        U: (dim_d1*dim_d2, dim_d1*dim_d2)
+        wf: (dim_chi1, dim_d1, dim_d2, dim_chi2)
+    Output:
+        loss
+        sing_vals
+    '''
+
+    U_wf = get_U_wf(U, wf)
+    _, sing_vals = get_renyi_entropy(U_wf, 2.)
+    loss = jax.numpy.sum(jax.numpy.square(sing_vals[bond_dimension:]))
+    return loss
+
 def disentangling_step(u, wf, alpha):
     print("connect to disentangling step")
     '''
     minimizing renyi-alpha entropy
     '''
+
+    raise NotImplementedError
+
+    # Should rewrite loss function as def loss(params, data) --> loss
+    # so that one can easily do
+    # value, grads = jax.value_and_grad(loss_fn)(opt.get_params(opt_state))
+
+
     with tf.GradientTape() as tape:
         # transforming real variable back to the complex representation
         # (it is only necessary to have real variables, but in the body
@@ -91,19 +121,20 @@ def disentangling_step(u, wf, alpha):
         renyi_2, sing_vals = get_renyi_entropy(U_wf, tf.constant(2., dtype=tf.float64))
 
         loss, _ = get_renyi_entropy(U_wf, alpha)
-        # loss, _ = get_U_wf_renyi_entropy(uc, wf, alpha)
-        # loss, _ = get_U_wf_renyi_entropy(qgo.manifolds.real_to_complex(u), wf, alpha)
+        # loss, _ = loss_renyi_entropy(uc, wf, alpha)
+        # loss, _ = loss_renyi_entropy(qgo.manifolds.real_to_complex(u), wf, alpha)
 
     grads = tape.gradient(loss, u)  # gradient
 
     return grads, loss, renyi_half, renyi_1, renyi_2, sing_vals
 
-@tf.function
 def opt_trunc_step(u, wf, bond_dimension):
     print("connect to opt_trunc")
     '''
     minimizing the truncation error = sum(sing_vals[bond_dim:]**2)
     '''
+
+    raise NotImplementedError
     with tf.GradientTape() as tape:
         # transforming real variable back to the complex representation
         # (it is only necessary to have real variables, but in the body
@@ -124,9 +155,7 @@ def opt_trunc_step(u, wf, bond_dimension):
     return grads, loss, renyi_half, renyi_1, renyi_2, sing_vals
 
 
-
-def find_u(wf, loss, loss_para, opt_type, iters=10000,
-           lr=0.5,):
+def find_u(wf, loss_type, loss_para, opt_type, iters=10000, lr=0.5):
     '''
     Inputs:
         wf: wavefunction/tensor to be disentangled.
@@ -148,100 +177,62 @@ def find_u(wf, loss, loss_para, opt_type, iters=10000,
         u_opt: the optimal unitary to act on wf
         info: the information about the minimization process in disentangling.
     '''
+
     chi1, d1, d2, chi2 = wf.shape
-    wf = tf.convert_to_tensor(wf, dtype=tf.complex128)
-    # [TODO]: Add checking wf tf or numpy
-    if loss == 'trunc':
-        opt_step = opt_trunc_step
-        loss_para = tf.constant(loss_para, dtype=tf.int32)
-    elif loss == 'renyi':
-        opt_step = disentangling_step
-        loss_para = tf.constant(loss_para, dtype=tf.float64)
+    wf = jax.numpy.complex128(wf)
+
+    if loss_type == 'trunc':
+        loss_fn = loss_truncation
+        loss_para = jax.numpy.int32(loss_para)
+        # opt_step = opt_trunc_step
+    elif loss_type == 'renyi':
+        loss_fn = loss_renyi_entropy
+        loss_para = jax.numpy.float64(loss_para)
+        # opt_step = disentangling_step
     else:
         raise NotImplementedError
 
 
-    if opt_type == 'EV':
-        EV_alg = True
+    # manifold = jax_opt.manifolds.StiefelManifold(metric='euclidean', retraction='svd')
+    manifold = jax_opt.manifolds.StiefelManifold()
+    if opt_type == 'rsgd':
+        opt_init, opt_update, get_params = jax_opt.optimizers.rsgd(lr, manifold)
+    elif opt_type == 'rmom':
+        opt_init, opt_update, get_params = jax_opt.optimizers.rmomentum(lr, manifold, 0.95)
+    elif opt_type == 'radam':
+        opt_init, opt_update, get_params = jax_opt.optimizers.radam(lr, manifold)
     else:
-        EV_alg = False
+        raise NotImplementedError
 
 
-    manifold = qgo.manifolds.StiefelManifold()
-    #=================================#
-    uc = tf.eye(d1*d2, dtype=tf.complex128)
-    u = tf.Variable(qgo.manifolds.complex_to_real(uc))
-    # uc = manifold.random([d1*d2, d1*d2], dtype=tf.complex128)
-    # u = tf.Variable(qgo.manifolds.complex_to_real(uc))
-    #=================================#
+    # @jit
+    def update(idx, opt_state, data):
+        params = get_params(opt_state)
+        return opt_update(idx,
+                          jax.numpy.conj(grad(loss_fn)(params, *data)),
+                          opt_state)
 
-    # Riemannian Adam,
-    # we pass m that is an example of
-    # complex Stiefel manifold to guide optimizer
-    # how to perform optimization on complex
-    # Stiefel manifold
-    manifold = qgo.manifolds.StiefelManifold()
-    if opt_type is None or opt_type == 'Adam':
-        opt = qgo.optimizers.RAdam(manifold, lr, ams=False)
-    elif opt_type == 'SGD' or opt_type =='EV':
-        opt = qgo.optimizers.RSGD(manifold, lr, momentum=0.95)
-    else:
-        raise
+    # set up params
+    U = jax.numpy.eye(d1*d2, dtype=jax.numpy.complex128)
+    params = U
+    opt_state = opt_init(params)
 
-    errs = [] # will be filled by err vs number of iterations
-    renyi_2_list = []
-    renyi_1_list = []
-    renyi_half_list = []
+    data = [wf, loss_para]
+    loss_list = []
+    current_loss = loss_fn(get_params(opt_state), *data)
+    loss_list.append(current_loss)
 
-    sing_vals_list = []
+    for step in range(iters):
+        opt_state = update(step, opt_state, data)
 
+        current_loss = loss_fn(get_params(opt_state), *data)
+        loss_list.append(current_loss)
 
-    for tf_idx in tf.range(1, iters+1):
-        grads, loss, renyi_half, renyi_1, renyi_2, sing_vals = opt_step(u, wf, loss_para)
-        if EV_alg:
-            grads_c = qgo.manifolds.real_to_complex(grads)
-            _, UU, VV = tf.linalg.svd(grads_c)
-            update_u = UU @ tf.transpose(tf.math.conj(VV))
-            u.assign(qgo.manifolds.complex_to_real(update_u))
-        else:
-            opt.apply_gradients(zip([grads], [u]))  # optimization step
+    params = get_params(opt_state)
+    import numpy
+    print(numpy.array(loss_list))
 
-
-
-        # errs.append(tf.math.sqrt(loss))
-        renyi_2_list.append(renyi_2.numpy())
-        renyi_1_list.append(renyi_1.numpy())
-        renyi_half_list.append(renyi_half.numpy())
-        errs.append(loss.numpy())
-        # assert np.isclose(np.sum(sing_vals.numpy() ** 2), 1.)
-        try:
-            assert tf.math.abs(tf.reduce_sum(sing_vals ** 2) - 1.) < 1e-6
-        except:
-            import pdb;pdb.set_trace()
-
-        sing_vals_list.append(sing_vals.numpy())
-
-
-        if errs[-1] < 1e-16 or (tf_idx > 1000 and
-                                np.abs(np.mean(errs[-5:]) - errs[-1])/np.abs(errs[-1]) < 1e-5):
-            break
-
-
-
-
-    eye_uc = tf.eye(d1*d2, dtype=tf.complex128)
-    _, original_sing = get_U_wf_renyi_entropy(eye_uc, wf, 2.)
-    data = {}
-    data['original_sing'] = original_sing.numpy()
-    data['errs'] = errs
-    data['renyi_2_list'] = renyi_2_list
-    data['renyi_1_list'] = renyi_1_list
-    data['renyi_half_list'] = renyi_half_list
-    data['sing_vals_list'] = sing_vals_list
-
-    uc = qgo.manifolds.real_to_complex(u)
-    return wf.numpy(), uc.numpy(), data
-
+    return params
 
 if __name__ == '__main__':
     import numpy as np
@@ -249,10 +240,10 @@ if __name__ == '__main__':
 
     test_tensor = np.random.rand(4, 2, 2, 4) - 0.5 +\
             1j*(np.random.rand(4, 2, 2, 4) - 0.5)
+
     U, S, Vd = np.linalg.svd(test_tensor.reshape([8, 8]))
     S /= np.linalg.norm(S)
-    test_tensor = U.dot(np.diag(S).dot(Vd)).reshape([4, 2, 2, 4])
+    wf = U.dot(np.diag(S).dot(Vd)).reshape([4, 2, 2, 4])
 
-    wf, u, data = find_u(test_tensor, 'trunc', 6, 'SGD', 100, lr=0.5)
-    # wf, u, data = find_u(test_tensor, 'renyi', 2, 'Adam', 100, lr=0.5)
-    print(data['errs'])
+    # find_u(wf, 'renyi', 2, 'radam', iters=100, lr=0.5)
+    u = find_u(wf, 'trunc', 6, 'rmom', iters=100, lr=0.5)
