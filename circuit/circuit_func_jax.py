@@ -1,6 +1,6 @@
 '''
 This file contains functions related to circuits.
-Maybe a better name is circuit_func.py
+This file works with jax.numpy to realize auto-differentiation.
 
 The gate in this code has the convention (0,1,2,3) which corresponds to
 
@@ -236,7 +236,7 @@ def apply_gate_exact(state, gate, idx):
         state
     '''
     total_dim = state.size
-    L = int(np.log2(total_dim))
+    L = np.log2(total_dim).astype(int)
     theta = np.reshape(state, [(2**idx), 4, 2**(L-(idx+2))])
     theta = np.tensordot(gate, theta, [1, 1])  ## [ij] [..., j, ...] --> [i, ..., ...]
     state = (np.transpose(theta, [1, 0, 2])).flatten()

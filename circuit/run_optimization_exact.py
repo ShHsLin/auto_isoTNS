@@ -2,7 +2,7 @@ import numpy as np
 import pickle
 import os, sys
 sys.path.append('..')
-import qTEBD, misc
+import circuit_func, misc
 import parse_args
 import mps_func
 
@@ -84,43 +84,43 @@ if __name__ == "__main__":
         random_layer = []
         for idx in range(L-1):
             if (idx + dep_idx) % 2 == 0:
-                random_layer.append(qTEBD.random_2site_U(2))
+                random_layer.append(circuit_func.random_2site_U(2))
             else:
                 random_layer.append(np.eye(4).reshape([2,2,2,2]))
 
         my_circuit.append(random_layer)
         current_depth = dep_idx + 1
 
-    iter_state = qTEBD.circuit_2_state(my_circuit, product_state)
+    iter_state = circuit_func.circuit_2_state(my_circuit, product_state)
     '''
     Sz_array[0, :] = mps_func.expectation_values_1_site(mps_of_layer[-1], Sz_list)
     ent_array[0, :] = mps_func.get_entanglement(mps_of_last_layer)
     '''
-    fidelity_reached = np.abs(qTEBD.overlap_exact(target_state, iter_state))**2
+    fidelity_reached = np.abs(circuit_func.overlap_exact(target_state, iter_state))**2
     print("fidelity reached : ", fidelity_reached)
     error_list.append(1. - fidelity_reached)
 
 
     stop_crit = 1e-1
-    assert np.isclose(qTEBD.overlap_exact(target_state, target_state), 1.)
+    assert np.isclose(circuit_func.overlap_exact(target_state, target_state), 1.)
     for idx in range(0, N_iter):
         #################################
         #### variational optimzation ####
         #################################
-        # mps_of_last_layer, my_circuit = qTEBD.var_circuit(target_mps, mps_of_last_layer,
+        # mps_of_last_layer, my_circuit = circuit_func.var_circuit(target_mps, mps_of_last_layer,
         #                                                   my_circuit, product_state)
 
-        iter_state, my_circuit = qTEBD.var_circuit_exact(target_state, iter_state,
+        iter_state, my_circuit = circuit_func.var_circuit_exact(target_state, iter_state,
                                                          my_circuit, product_state, brickwall=True)
         #################
         #### Measure ####
         #################
-        assert np.isclose(qTEBD.overlap_exact(iter_state, iter_state), 1.)
+        assert np.isclose(circuit_func.overlap_exact(iter_state, iter_state), 1.)
         '''
         Sz_array[idx, :] = mps_func.expectation_values_1_site(mps_of_last_layer, Sz_list)
         ent_array[idx, :] = mps_func.get_entanglement(mps_of_last_layer)
         '''
-        fidelity_reached = np.abs(qTEBD.overlap_exact(target_state, iter_state))**2
+        fidelity_reached = np.abs(circuit_func.overlap_exact(target_state, iter_state))**2
 
         print("fidelity reached : ", fidelity_reached)
         error_list.append(1. - fidelity_reached)

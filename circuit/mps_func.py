@@ -1,6 +1,6 @@
 import numpy as np
 import misc
-import qTEBD
+import circuit_func
 try:
     raise
     import tcl.tcl
@@ -18,10 +18,10 @@ def init_mps(L, chi, d):
         chi1 = np.min([d**np.min([i,L-i]),chi])
         chi2 = np.min([d**np.min([i+1,L-i-1]),chi])
         try:
-            A_list.append(qTEBD.polar(0.5 - np.random.uniform(size=[d,chi1,chi2])))
+            A_list.append(circuit_func.polar(0.5 - np.random.uniform(size=[d,chi1,chi2])))
             # A_list.append(polar(np.random.uniform(size=[d,chi1,chi2])))
         except:
-            A_list.append(qTEBD.polar(0.5 - onp.random.uniform(size=[d,chi1,chi2])))
+            A_list.append(circuit_func.polar(0.5 - onp.random.uniform(size=[d,chi1,chi2])))
             # A_list.append(polar(onp.random.uniform(size=[d,chi1,chi2])))
 
     return A_list

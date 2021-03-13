@@ -1,6 +1,5 @@
 '''
 This file contains functions related to circuits.
-Maybe a better name is circuit_func.py
 
 The gate in this code has the convention (0,1,2,3) which corresponds to
 

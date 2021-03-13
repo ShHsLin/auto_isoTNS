@@ -1,3 +1,8 @@
+'''
+In this file, the unitary is labeled with the output dimension first, i.e.
+U_ij |\psi_j>
+instead o f U_{ji} | \psi_j>
+'''
 import jax
 import jax.numpy as np
 from jax.ops import index, index_add, index_update
@@ -7,12 +12,10 @@ import sys; sys.path.append('../')
 import jax_opt.optimizers
 import jax_opt.manifolds
 
-
-
 import numpy as onp
 import pickle
 import os, sys
-import qTEBD_jax as qTEBD
+import circuit_func_jax as circuit_func
 import misc
 import parse_args
 import mps_func
@@ -22,10 +25,7 @@ import mps_func
         (1.) first call circuit_2_state to get the (list of) exact reprentation of
         circuit up to each layer.
         (2.) Load the target state | psi >
-        (3.) var optimize layer-n by maximizing < psi | U(n) | n-1>
-        (4.) collapse layer-n optimized on |psi> getting new |psi>
-        (5.) var optimize layer-n-1 by maximizing < psi | U(n-1) | n-2 >
-        [TODO] check the index n above whether is consistent with the code.
+        (3.) maximizing the overlap | < psi | circuit > |^2
         ...
 '''
 def cost_function_fidelity(circuit, target_state, product_state):
@@ -42,12 +42,12 @@ def cost_function_fidelity(circuit, target_state, product_state):
         loss
     '''
 
-    iter_state = qTEBD.circuit_2_state(circuit, product_state)
-    fidelity = np.abs(qTEBD.overlap_exact(target_state, iter_state))**2
+    iter_state = circuit_func.circuit_2_state(circuit, product_state)
+    fidelity = np.abs(circuit_func.overlap_exact(target_state, iter_state))**2
     return 1. - fidelity
 
 
-def rsgd(circuit, target_state, product_state, opt_type, num_iter=10000, lr=0.05):
+def rsgd(circuit, target_state, product_state, opt_type, num_iter=10000, lr=0.05, brickwall=True):
     '''
     Inputs:
         cirucit
@@ -68,23 +68,26 @@ def rsgd(circuit, target_state, product_state, opt_type, num_iter=10000, lr=0.05
     else:
         raise NotImplementedError
 
-    # @jit
     def update(idx, opt_state, data):
         params = get_params(opt_state)
         gradient_direction = jax.tree_util.tree_map(np.conj,
                                                     jax.grad(cost_function_fidelity)(params, *data)
                                                    )
 
-        ### Brickwall condition ###
-        for dep_idx, layer in enumerate(gradient_direction):
-            for site_idx, U in enumerate(layer):
-                if (dep_idx + site_idx) % 2 != 0:
-                    gradient_direction[dep_idx][site_idx] *= 0.
+        if brickwall:
+            ### Brickwall condition ###
+            for dep_idx, layer in enumerate(gradient_direction):
+                for site_idx, U in enumerate(layer):
+                    if (dep_idx + site_idx) % 2 != 0:
+                        gradient_direction[dep_idx][site_idx] *= 0.
+        else:
+            pass
 
 
         return opt_update(idx,
                           gradient_direction,
                           opt_state)
+
 
     #################
     # set up params #
@@ -147,10 +150,13 @@ if __name__ == "__main__":
 
     # cat_state = onp.zeros([2**L])
     # cat_state[0] = cat_state[-1] = 1./np.sqrt(2)
-    # target_state = cat_state
 
-    target_state = onp.random.normal(0, 1, [2**L]) + 1j * onp.random.normal(0, 1, [2**L])
-    target_state /= np.linalg.norm(target_state)
+    ## Here we give an example of Haar random state
+    ## as target state.
+
+    random_state = onp.random.normal(0, 1, [2**L]) + 1j * onp.random.normal(0, 1, [2**L])
+    random_state /= np.linalg.norm(random_state)
+    target_state = random_state
 
 
 
@@ -183,19 +189,20 @@ if __name__ == "__main__":
             if (idx + dep_idx) % 2 == 0:
                 ## We add .T to compare with the result from polor decomposition
                 ## Over there the convention is ji, instead of ij.
-                random_layer.append(qTEBD.random_2site_U(2).T)
+                random_layer.append(circuit_func.random_2site_U(2).T)
             else:
+                ## (set to identity for brickwall circuit)
                 random_layer.append(onp.eye(4, dtype=np.complex128).reshape([4,4]))
 
         my_circuit.append(random_layer)
         current_depth = dep_idx + 1
 
-    iter_state = qTEBD.circuit_2_state(my_circuit, product_state)
+    iter_state = circuit_func.circuit_2_state(my_circuit, product_state)
     '''
     Sz_array[0, :] = mps_func.expectation_values_1_site(mps_of_layer[-1], Sz_list)
     ent_array[0, :] = mps_func.get_entanglement(mps_of_last_layer)
     '''
-    fidelity_reached = np.abs(qTEBD.overlap_exact(target_state, iter_state))**2
+    fidelity_reached = np.abs(circuit_func.overlap_exact(target_state, iter_state))**2
     print("fidelity reached : ", fidelity_reached)
     error_list.append(1. - fidelity_reached)
 
@@ -203,29 +210,29 @@ if __name__ == "__main__":
     loss_list = rsgd(my_circuit, target_state, product_state, opt_type='radam', num_iter=N_iter, lr=0.5)
     print(loss_list)
     '''
-    TODO: fix the convention in qTEBD_jax, the var_exact is still using the old convention.
+    TODO: fix the convention in circuit_func_jax, the var_exact is still using the old convention.
     '''
 
     stop_crit = 1e-1
-    assert np.isclose(qTEBD.overlap_exact(target_state, target_state), 1.)
+    assert np.isclose(circuit_func.overlap_exact(target_state, target_state), 1.)
     for idx in range(0, N_iter):
         #################################
         #### variational optimzation ####
         #################################
-        # mps_of_last_layer, my_circuit = qTEBD.var_circuit(target_mps, mps_of_last_layer,
+        # mps_of_last_layer, my_circuit = circuit_func.var_circuit(target_mps, mps_of_last_layer,
         #                                                   my_circuit, product_state)
 
-        iter_state, my_circuit = qTEBD.var_circuit_exact(target_state, iter_state,
+        iter_state, my_circuit = circuit_func.var_circuit_exact(target_state, iter_state,
                                                          my_circuit, product_state, brickwall=True)
         #################
         #### Measure ####
         #################
-        assert np.isclose(qTEBD.overlap_exact(iter_state, iter_state), 1.)
+        assert np.isclose(circuit_func.overlap_exact(iter_state, iter_state), 1.)
         '''
         Sz_array[idx, :] = mps_func.expectation_values_1_site(mps_of_last_layer, Sz_list)
         ent_array[idx, :] = mps_func.get_entanglement(mps_of_last_layer)
         '''
-        fidelity_reached = np.abs(qTEBD.overlap_exact(target_state, iter_state))**2
+        fidelity_reached = np.abs(circuit_func.overlap_exact(target_state, iter_state))**2
 
         print("fidelity reached : ", fidelity_reached)
         error_list.append(1. - fidelity_reached)
@@ -244,18 +251,4 @@ if __name__ == "__main__":
     '''
 
 
- 
-    try:
-        A = np.random.uniform(size=[d**2, d**2]) * factor
-    except:
-        A = onp.random.uniform(size=[d**2, d**2]) * factor
-
-    A = A-A.T
- 
-    try:
-        A = np.random.uniform(size=[d**2, d**2]) * factor
-    except:
-        A = onp.random.uniform(size=[d**2, d**2]) * factor
-
-    A = A-A.T
 
