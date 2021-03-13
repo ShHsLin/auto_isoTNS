@@ -32,7 +32,6 @@ MPS contraction could deal with larger system size with low entanglement.
 * Riemannian gradient descent gives slightly worse result for simple circuit.
 Have not yet tested fully for all cases.
 
-* TODO: adding MPS contraction + Riemannian gradient descent
 
 
 
@@ -51,3 +50,19 @@ optional arguments:
                         Whether or not using brickwalltype in 1 for true, 0
                         for falseDefault: False
 ```
+
+
+## TODO:
+
+###  adding MPS contraction + Riemannian gradient descent
+* add mps function to circuit\_func\_jax.py
+* overcome the svd problem; truncation no problem? stability?
+* fix the convention to U\_ij instead of U\_ji
+* after fixing the convention in circuit\_func\_jax.py;
+we can then change the circuit\_func.py and then whole project to
+use the U\_ij notation.
+
+* Having stable MPS + RGD, we can then apply this on PEPS.
+
+  
+
