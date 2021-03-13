@@ -209,8 +209,13 @@ if __name__ == "__main__":
 
     loss_list = rsgd(my_circuit, target_state, product_state, opt_type='radam', num_iter=N_iter, lr=0.5)
     print(loss_list)
+    exit()
+
+
+
+
     '''
-    TODO: fix the convention in circuit_func_jax, the var_exact is still using the old convention.
+    The following perform polor decomposition
     '''
 
     stop_crit = 1e-1
