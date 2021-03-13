@@ -27,31 +27,31 @@ import misc, os
 import sys
 import mps_func
 
-## 
 ## We use jax.numpy if possible
 ## or autograd.numpy
 ##
 ## Regarding wether choosing to use autograd or jax
 ## see https://github.com/google/jax/issues/193
-## Basically, if we do not use gpu or tpu and work with 
-## small problem size and do not want to spend time fixing
-## function with @jit, then autograd should be fine.
 
-try:
-    raise
-    # import jax.numpy as np
-    import autograd.numpy as np
-    from autograd import grad
-    # from jax import random
-    # from jax import grad, jit, vmap
-    # from jax.config import config
-    # config.update("jax_enable_x64", True)
-except:
-    import numpy as np
-    np.seterr(all='raise')
-    # print("some function may be broken")
+# import autograd.numpy as np
+# from autograd import grad
+# import jax.numpy as np
+# from jax import random
+# from jax import grad, jit, vmap
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+
+import numpy as np
+np.seterr(all='raise')
+# print("some function may be broken")
 
 import numpy as onp
+
+'''
+current file is used purely numpy
+for jax.numpy see circuit_func_jax.py
+'''
+
 
 
 def get_H(Hamiltonian, L, J, g, h=0, change_basis=False):

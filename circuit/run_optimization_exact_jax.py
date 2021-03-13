@@ -22,8 +22,7 @@ import mps_func
 
 '''
     Algorithm:
-        (1.) first call circuit_2_state to get the (list of) exact reprentation of
-        circuit up to each layer.
+        (1.) first call circuit_2_state to get the (list of) exact reprentation of the state
         (2.) Load the target state | psi >
         (3.) maximizing the overlap | < psi | circuit > |^2
         ...

@@ -8,12 +8,9 @@ import mps_func
 
 '''
     Algorithm:
-        (1.) first call circuit_2_state to get the (list of) exact reprentation of
-        circuit up to each layer.
+        (1.) first call circuit_2_state to get the (list of) exact reprentation of the state
         (2.) Load the target state | psi >
         (3.) var optimize layer-n by maximizing < psi | U(n) | n-1>
-        (4.) collapse layer-n optimized on |psi> getting new |psi>
-        (5.) var optimize layer-n-1 by maximizing < psi | U(n-1) | n-2 >
         [TODO] check the index n above whether is consistent with the code.
         ...
 '''
