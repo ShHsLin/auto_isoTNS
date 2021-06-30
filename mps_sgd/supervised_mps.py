@@ -15,6 +15,7 @@ import numpy as np
 import os
 
 import mps_func
+import parse_args
 # def init_mps(L, chi, d):
 # def get_mps_amp(mps_list, config):
 # def get_mps_amp_batch(mps_list, config_batch):
@@ -257,7 +258,7 @@ def training_sgd(mps_mat_list, X, Y, opt_type,
             data_dict['fidelity'].append(np.abs(overlap)**2)
 
             print("step %d, Cost=%f, kl=%f, l2=%f, F=%f" % (step, data_dict['cost_avg'][-1], data_dict['kl_avg'][-1], data_dict['l2_avg'][-1], np.abs(overlap)**2 ))
-            np.save(ckpt_path + '/chi%d_T%.2f.npy' % (chi, T), mps_mat_list)
+            np.save(ckpt_path + '/chi%d_T%.2f.npy' % (chi, T), mps_mat_list, allow_pickle=True)
             np.save(ckpt_path + '/data_dict.npy', data_dict, allow_pickle=True)
 
         if step % 10000 == 0:
@@ -353,12 +354,20 @@ def training_mps(mps_mat_list, exact_mps, opt_type,
 
 
 if __name__ == '__main__':
-    L = 20
-    batch_size = 512
-    chi = 6
-    supervised_model = '1D_ZZ_1.00X_0.25XX_global_TE_L20'
-    T = 1.00
-    num_iter = 5000
+    args = parse_args.parse_args()
+    if bool(args.debug):
+        np.random.seed(0)
+
+    L = args.L
+    batch_size = args.batch_size
+    assert batch_size == 512
+    chi = args.chi
+    supervised_model = args.supervised_model  # '1D_ZZ_1.00X_0.25XX_global_TE_L20'
+    T = args.T
+    path = args.path
+    if len(path) > 0 and path[-1] != '/':
+        path = path + '/'
+
 
 
     #################
@@ -372,7 +381,6 @@ if __name__ == '__main__':
     Y = np.load('ExactDiag/wavefunction/%s/ED_wf_T%.2f.npy' % (supervised_model, T))
     Y = np.array(Y, dtype=np.complex128)[:, None]
 
-    path = 'Result/'
     ckpt_path = path + \
             'wavefunction/Supervised/' + '%s_T%.2f/' % (supervised_model, T) + \
             'MPS_%d' % chi
@@ -444,6 +452,12 @@ if __name__ == '__main__':
     ###################################################################
     mps_mat_list, data_dict = training_sgd(mps_mat_list, X, Y,
                                            opt_type='radam', num_iter=300000,
+                                           batch_size=batch_size, lr=1e-2,
+                                           exact_mps=exact_mps,
+                                           data_dict=data_dict, T=T, ckpt_path=ckpt_path
+                                          )
+    mps_mat_list, data_dict = training_sgd(mps_mat_list, X, Y,
+                                           opt_type='radam', num_iter=300000,
                                            batch_size=batch_size, lr=1e-3,
                                            exact_mps=exact_mps,
                                            data_dict=data_dict, T=T, ckpt_path=ckpt_path
@@ -454,9 +468,11 @@ if __name__ == '__main__':
                                            exact_mps=exact_mps,
                                            data_dict=data_dict, T=T, ckpt_path=ckpt_path
                                           )
+
+
     # mps_mat_list, cost_list = training_mps(mps_mat_list, exact_mps,
     #                                        opt_type='radam', num_iter=1000, lr=1e-2)
-    np.save(ckpt_path + '/chi%d_T%.2f.npy' % (chi, T), mps_mat_list)
+    np.save(ckpt_path + '/chi%d_T%.2f.npy' % (chi, T), mps_mat_list, allow_pickle=True)
     np.save(ckpt_path + '/data_dict.npy', data_dict, allow_pickle=True)
 
     ###################################################################
