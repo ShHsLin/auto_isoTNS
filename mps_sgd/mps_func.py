@@ -7,6 +7,8 @@ import misc
 
 def init_mps(L, chi, d):
     '''
+    [left, phys, right]
+
     Return MPS in AAAAAA form, i.e. left canonical form
     such that \sum A^\dagger A = I
     '''
@@ -29,6 +31,8 @@ def init_mps(L, chi, d):
 
 def get_mps_amp(mps_list, config):
     '''
+    [left, phys, right]
+
     Goal:
         evaluate the probability amplitude of the given configuration
     Input:
@@ -45,6 +49,8 @@ def get_mps_amp(mps_list, config):
 
 def get_mps_amp_batch(mps_list, config_batch):
     '''
+    [left, phys, right]
+
     Goal:
         evaluate the probability amplitude of the given configuration
     Input:
@@ -85,6 +91,8 @@ def plr_2_lpr(A_list):
 
 def MPS_dot_left_env(mps_up, mps_down, site_l, cache_env_list=None):
     '''
+    [left, phys, right]
+
     # Complex compatible
     Goal:
         Contract and form the left environment of site_l
@@ -119,6 +127,8 @@ def MPS_dot_left_env(mps_up, mps_down, site_l, cache_env_list=None):
 
 def MPS_dot_right_env(mps_up, mps_down, site_l, cache_env_list=None):
     '''
+    [left, phys, right]
+
     # Complex compatible
     Goal:
         Contract and form the right environment of site_l
@@ -153,25 +163,33 @@ def MPS_dot_right_env(mps_up, mps_down, site_l, cache_env_list=None):
 
     return right_env
 
-
 def MPS_dot(mps_1, mps_2):
     '''
+    [left, phys, right]
+
     # Complex compatible
     Return inner product of two MPS, with mps_1 taking complex_conjugate
     <mps_1 | mps_2 >
     '''
     L = len(mps_1)
-    mps_temp = einsum('ijk,ijl->kl', mps_1[0].conjugate(), mps_2[0])
+    # mps_temp = einsum('ijk,ijl->kl', mps_1[0].conjugate(), mps_2[0])
+    mps_temp = jnp.tensordot(mps_1[0].conjugate(), mps_2[0], [[0, 1], [0, 1]])  #right*, right
     for idx in range(1, L):
-        mps_temp = einsum('ij,ikl->jkl', mps_temp, mps_1[idx].conjugate())
-        mps_temp = einsum('ijk,ijl->kl', mps_temp, mps_2[idx])
+        mps_temp = jnp.tensordot(mps_temp, mps_2[idx], [[1], [0]])
+        # [right*, (right)] [(left), phys, right] -> [right*, phys, right]
+        mps_temp = jnp.tensordot(mps_1[idx].conjugate(), mps_temp, [[0, 1], [0, 1]])
+        #  [left*, phys*, right*] [right*, phys, right] --> [right*, right]
 
-    return mps_temp[0, 0]
+        # mps_temp = einsum('ij,ikl->jkl', mps_temp, mps_1[idx].conjugate())
+        # mps_temp = einsum('ijk,ijl->kl', mps_temp, mps_2[idx])
 
+    return jnp.trace(mps_temp)
 
 def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
                                 verbose=0):
     '''
+    [left, phys, right]
+
     Variational Compression on MPS with mps_trial given.
     Input:
         mps_trial: MPS for optimization
@@ -317,6 +335,8 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
 
 def MPS_2_state(mps):
     '''
+    [phys, left, right]
+
     Goal:
         Return the full tensor representation (vector) of the state
     Input:
@@ -332,6 +352,8 @@ def MPS_2_state(mps):
 
 def state_2_MPS(psi, L, chimax):
     '''
+    [phys, left, right]
+
     Input:
         psi: the state
         L: the system size
@@ -407,6 +429,8 @@ def operator_2_MPO(op, L, chimax):
 
 def overlap(psi1, psi2):
     '''
+    [phys, left, right]
+
     psi1 is not taken complex conjugate beforehand.
     psi1 : with dimension [p, l, r]
     psi2 : with dimension [p, l, r]
@@ -423,6 +447,10 @@ def overlap(psi1, psi2):
     return(N)
 
 def expectation_values_1_site(A_list, Op_list, check_norm=True):
+    '''
+    [phys, left, right]
+
+    '''
     if check_norm:
         assert np.isclose(overlap(A_list, A_list), 1.)
     else:
@@ -452,6 +480,10 @@ def expectation_values_1_site(A_list, Op_list, check_norm=True):
     return Op_per_site
 
 def expectation_values(A_list, H_list, check_norm=True):
+    '''
+    [phys, left, right]
+
+    '''
     if check_norm:
         assert np.isclose(np.abs(overlap(A_list, A_list)), 1.)
     else:
@@ -483,6 +515,8 @@ def expectation_values(A_list, H_list, check_norm=True):
 
 def right_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
     '''
+    [phys, left, right]
+
     Bring mps in right canonical form, assuming the input mps is in
     left canonical form already.
 
@@ -527,6 +561,8 @@ def right_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
 
 def left_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
     '''
+    [phys, left, right]
+
     Bring mps in left canonical form, assuming the input mps is in
     right canonical form already.
 
@@ -571,6 +607,8 @@ def left_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
 
 def get_entanglement(A_list):
     '''
+    [phys, left, right]
+
     Goal:
         Compute the bibpartite entanglement at each cut.
     Input:
@@ -605,6 +643,8 @@ def get_entanglement(A_list):
 
 def get_renyi_n_entanglement(A_list, n):
     '''
+    [phys, left, right]
+
     Goal:
         Compute the renyi-n entanglement at each cut.
     Input:

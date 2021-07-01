@@ -63,7 +63,7 @@ if __name__ == '__main__':
     except Exception as e:
         print("error = ", e)
         mps_list = mps_func.init_mps(L=L, chi=chi, d=2)
-        mps_mat_list = mps_2_mat(mps_list)
+        mps_mat_list = supervised_mps.mps_2_mat(mps_list)
 
     exact_mps = mps_func.state_2_MPS(Y, 20, 1024)
 

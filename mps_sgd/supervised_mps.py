@@ -1,8 +1,6 @@
 import sys
 sys.path.append('../')
-import parse_args
 import mps_func
-import os
 import numpy as np
 from jax import random
 import jax_opt.manifolds
@@ -16,6 +14,7 @@ config.update("jax_enable_x64", True)
 
 
 def mps_2_mat(mps_list):
+    L = len(mps_list)
     mps_mat_list = []
     for i in range(L):
         dim1, dim2, dim3 = mps_list[i].shape
@@ -145,6 +144,7 @@ def training_rsgd(mps_mat_list, X, Y, opt_type,
         num_iter: the number of iterations
         lr: the leraning rate
     '''
+    L = len(mps_mat_list)
 
     # manifold = jax_opt.manifolds.StiefelManifold()
     manifold = jax_opt.manifolds.StiefelManifold(
