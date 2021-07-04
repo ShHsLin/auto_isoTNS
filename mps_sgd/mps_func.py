@@ -163,7 +163,7 @@ def MPS_dot_right_env(mps_up, mps_down, site_l, cache_env_list=None):
 
     return right_env
 
-def MPS_dot(mps_1, mps_2):
+def overlap_lpr(mps_1, mps_2):
     '''
     [left, phys, right]
 
@@ -205,12 +205,12 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
     '''
     L = len(mps_trial)
     # Check normalization
-    if np.abs(MPS_dot(mps_trial, mps_trial) - 1.) > 1e-8:
-        print(('mps_comp_var not normalized', MPS_dot(mps_trial, mps_trial)))
+    if np.abs(overlap_lpr(mps_trial, mps_trial) - 1.) > 1e-8:
+        print(('mps_comp_var not normalized', overlap_lpr(mps_trial, mps_trial)))
         raise
-    elif np.abs(MPS_dot(mps_target, mps_target) - 1.) > 1e-8:
-        print(('mps_comp_var not normalized', MPS_dot(mps_target, mps_target)))
-        mps_target[-1] /= np.sqrt(MPS_dot(mps_target, mps_target))
+    elif np.abs(overlap_lpr(mps_target, mps_target) - 1.) > 1e-8:
+        print(('mps_comp_var not normalized', overlap_lpr(mps_target, mps_target)))
+        mps_target[-1] /= np.sqrt(overlap_lpr(mps_target, mps_target))
     else:
         pass
         # all normalized
@@ -322,7 +322,7 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
             cache_env_list[site - 1] = None
 
         # site = 0
-        trunc_err = 1. - np.square(np.abs(MPS_dot(mps_trial, mps_target)))
+        trunc_err = 1. - np.square(np.abs(overlap_lpr(mps_trial, mps_target)))
         if verbose:
             print(('var_trunc_err = ', trunc_err))
 
@@ -444,7 +444,7 @@ def overlap(psi1, psi2):
 
     assert N.size == 1
     N = jnp.trace(N)
-    return(N)
+    return N
 
 def expectation_values_1_site(A_list, Op_list, check_norm=True):
     '''
@@ -516,9 +516,13 @@ def expectation_values(A_list, H_list, check_norm=True):
 def right_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
     '''
     [phys, left, right]
+    [left canonical form]
 
-    Bring mps in right canonical form, assuming the input mps is in
+    - Bring mps in right canonical form, assuming the input mps is in
     left canonical form already.
+    - The requirement of left canonical form is not necessary, if
+    there is no truncation.
+
 
     modification in place
     '''
@@ -562,9 +566,12 @@ def right_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
 def left_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
     '''
     [phys, left, right]
+    [right canonical form]
 
-    Bring mps in left canonical form, assuming the input mps is in
+    - Bring mps in left canonical form, assuming the input mps is in
     right canonical form already.
+    - The requirement of right canonical form is not necessary, if
+    there is no truncation.
 
     modification in place
     '''
