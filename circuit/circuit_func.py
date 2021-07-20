@@ -20,6 +20,37 @@ ______________
 In terms of matrix vector notation, U(i,j, i', j') |state(i,j)>, which is a bit annoying.
 should chagne in the clean version of the code.
 
+
+- - -
+
+Currently in the process of changing the notation to
+
+   0      1
+   |      |
+   |      |
+______________
+|            |
+|            |
+______________
+   |      |
+   |      |
+   2      3
+
+  |0>    |0>
+
+
+U(i,j, i', j') |state(i', j')>
+
+function modified:
+    apply_gate_exact
+    apply_gate
+
+[TODO] modify:
+    the variational functions.
+    var_circuit_exact : we can copy the change from circuit_func_jax.
+    var_circuit
+
+
 '''
 from scipy import integrate
 from scipy.linalg import expm
@@ -1061,9 +1092,13 @@ def apply_gate(A_list, gate, idx, move, no_trunc=False, chi=None, normalized=Fal
     d1, chi1, chi2 = A_list[idx].shape
     d2, chi2, chi3 = A_list[idx + 1].shape
 
-    theta = np.tensordot(A_list[idx], A_list[idx + 1],axes=(2,1))
-    theta = np.tensordot(gate, theta, axes=([0,1],[0,2]))
-    theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
+    theta = np.tensordot(A_list[idx], A_list[idx + 1],axes=(2,1))  # [d1, chi1, d2, chi3]
+    theta = np.tensordot(gate, theta, axes=([2,3],[0,2]))  # [i',j',i,j] [i, D1, j, D2] -> [i',j',D1, D2]
+    theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))  # [i',D1,j',D2]
+
+    # [TODO] Remove the code below: old convention should be removed
+    # theta = np.tensordot(gate, theta, axes=([0,1],[0,2]))  # [i,j,i',j'] [i, D1, j, D2] -> [i',j',D1, D2]
+    # theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))  # [i',D1,j',D2]
 
     X, Y, Z = misc.svd(theta, full_matrices=0)
 
@@ -1123,8 +1158,13 @@ def apply_gate_exact(state, gate, idx):
     L = int(np.log2(total_dim))
     theta = np.reshape(state, [(2**idx), 4, 2**(L-(idx+2))])
     gate = np.reshape(gate, [4, 4])
-    theta = np.tensordot(theta, gate, [1, 0])  ## [..., j, ...] [ji] --> [..., ..., i]
-    state = (np.transpose(theta, [0, 2, 1])).flatten()
+
+    theta = np.tensordot(gate, theta, [1, 1])  ## [ij] [..., j, ...] --> [i, ..., ...]
+    state = (np.transpose(theta, [1, 0, 2])).flatten()
+
+    # [TODO] Remove the code below: old convention should be removed
+    # theta = np.tensordot(theta, gate, [1, 0])  ## [..., j, ...] [ji] --> [..., ..., i]
+    # state = (np.transpose(theta, [0, 2, 1])).flatten()
     return state
 
 def apply_gate_mpo(A_list, gate, idx, pos, move, no_trunc=False, chi=None, normalized=False):
