@@ -252,8 +252,8 @@ def circuit_2_mps(circuit, product_state, chi=None):
     for dep_idx in range(depth):
         U_list = circuit[dep_idx]
         ### A_list is modified inplace
-        mps_func.right_canonicalize(A_list)
-        A_list, trunc_error = apply_U_all(A_list, U_list, cache=False)
+        mps_func.right_canonicalize(A_list, normalized=False)
+        A_list, trunc_error = apply_U_all(A_list, U_list, cache=False, chi=chi)
         mps_of_layer.append([A.copy() for A in A_list])
 
     return mps_of_layer
@@ -1094,7 +1094,9 @@ def apply_gate(A_list, gate, idx, move, no_trunc=False, chi=None, normalized=Fal
 
     theta = np.tensordot(A_list[idx], A_list[idx + 1],axes=(2,1))  # [d1, chi1, d2, chi3]
     theta = np.tensordot(gate, theta, axes=([2,3],[0,2]))  # [i',j',i,j] [i, D1, j, D2] -> [i',j',D1, D2]
-    theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))  # [i',D1,j',D2]
+    theta = np.transpose(theta, (0,2,1,3))  # [i',D1,j',D2]
+    dim_ip, dim_D1, dim_jp, dim_D2 = theta.shape
+    theta = np.reshape(theta, (dim_ip*dim_D1, dim_jp*dim_D2))  # [i',D1,j',D2]
 
     # [TODO] Remove the code below: old convention should be removed
     # theta = np.tensordot(gate, theta, axes=([0,1],[0,2]))  # [i,j,i',j'] [i, D1, j, D2] -> [i',j',D1, D2]
@@ -1113,6 +1115,7 @@ def apply_gate(A_list, gate, idx, move, no_trunc=False, chi=None, normalized=Fal
     arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
     trunc_idx = (np.argsort(Y)[::-1])[chi2:]
     trunc_error = np.sum(Y[trunc_idx] ** 2) / np.sum(Y**2)
+
     Y = Y[arg_sorted_idx]  # chi2
     if normalized:
         Y = Y / np.linalg.norm(Y)

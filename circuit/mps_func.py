@@ -295,7 +295,7 @@ def MPS_2_state(mps):
 
     return Vec.flatten()
 
-def state_2_MPS(psi, L, chimax):
+def state_2_MPS(psi, L, chimax, eps=1e-15):
     '''
     Input:
         psi: the state
@@ -309,11 +309,16 @@ def state_2_MPS(psi, L, chimax):
         assert dim_R == 2**(L-(n-1))
         psi_LR = np.reshape(psi_aR, (chi_n*2, dim_R//2))
         M_n, lambda_n, psi_tilde = misc.svd(psi_LR, full_matrices=False)
-        if len(lambda_n) > chimax:
+
+        chimax_current = np.amin([chimax,
+                                  np.sum((lambda_n / np.linalg.norm(lambda_n)) > eps)])
+
+        if len(lambda_n) > chimax_current:
             keep = np.argsort(lambda_n)[::-1][:chimax]
             M_n = M_n[:, keep]
             lambda_n = lambda_n[keep]
             psi_tilde = psi_tilde[keep, :]
+
         chi_np1 = len(lambda_n)
         M_n = np.reshape(M_n, (chi_n, 2, chi_np1))
         Ms.append(M_n)
