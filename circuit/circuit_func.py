@@ -1095,8 +1095,8 @@ def apply_gate(A_list, gate, idx, move, no_trunc=False, chi=None, normalized=Fal
     theta = np.tensordot(A_list[idx], A_list[idx + 1],axes=(2,1))  # [d1, chi1, d2, chi3]
     theta = np.tensordot(gate, theta, axes=([2,3],[0,2]))  # [i',j',i,j] [i, D1, j, D2] -> [i',j',D1, D2]
     theta = np.transpose(theta, (0,2,1,3))  # [i',D1,j',D2]
-    dim_ip, dim_D1, dim_jp, dim_D2 = theta.shape
-    theta = np.reshape(theta, (dim_ip*dim_D1, dim_jp*dim_D2))  # [i',D1,j',D2]
+    d1, chi1, d2, chi3 = theta.shape
+    theta = np.reshape(theta, (d1*chi1, d2*chi3))  # [i',D1,j',D2]
 
     # [TODO] Remove the code below: old convention should be removed
     # theta = np.tensordot(gate, theta, axes=([0,1],[0,2]))  # [i,j,i',j'] [i, D1, j, D2] -> [i',j',D1, D2]
@@ -1107,7 +1107,7 @@ def apply_gate(A_list, gate, idx, move, no_trunc=False, chi=None, normalized=Fal
     if no_trunc:
         chi2 = np.size(Y)
     else:
-        chi2 = np.sum(Y>1e-14)
+        chi2 = np.sum((Y/np.linalg.norm(Y))>1e-14)
         if chi is not None:
             chi2 = np.amin([chi2, chi])
 
@@ -1124,7 +1124,6 @@ def apply_gate(A_list, gate, idx, move, no_trunc=False, chi=None, normalized=Fal
     Z = Z[arg_sorted_idx, :]  # (chi2, d2*chi3)
 
     if move == 'right':
-        X=np.reshape(X, (d1, chi1, chi2))
         A_list[idx] = X.reshape([d1, chi1, chi2])
         A_list[idx + 1] = np.dot(np.diag(Y), Z).reshape([chi2, d2, chi3]).transpose([1, 0, 2])
     elif move == 'left':
