@@ -253,7 +253,7 @@ def circuit_2_mps(circuit, product_state, chi=None):
         U_list = circuit[dep_idx]
         ### A_list is modified inplace
         mps_func.right_canonicalize(A_list, normalized=False)
-        A_list, trunc_error = apply_U_all(A_list, U_list, cache=False, chi=chi)
+        A_list, trunc_error = apply_U_all(A_list, U_list, cache=False, chi=chi, normalized=False)
         mps_of_layer.append([A.copy() for A in A_list])
 
     return mps_of_layer
@@ -1275,7 +1275,7 @@ def apply_U_all_exact(exact_state, U_list, cache=False):
     else:
         return exact_state
 
-def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
+def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None, normalized=True):
     # Make this function as an application of apply_gate only.
     #[TODO] Write also applying gates backward (L-2, L-1), (L-3, L-2), ...?
     '''
@@ -1306,7 +1306,7 @@ def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
     for i in range(L-1):
         gate = U_list[i]
         trunc_error = apply_gate(A_list, gate, i, move='right', no_trunc=no_trunc,
-                                 chi=chi, normalized=True)
+                                 chi=chi, normalized=normalized)
 
         tot_trunc_err = tot_trunc_err + trunc_error
 

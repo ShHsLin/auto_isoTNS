@@ -468,7 +468,7 @@ def right_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
         if no_trunc:
             chi1 = np.size(Y)
         else:
-            chi1 = np.sum(Y>1e-14)
+            chi1 = np.sum((Y/np.linalg.norm(Y))>1e-14)
 
         if chi is not None:
             chi1 = np.amin([chi1, chi])
@@ -512,7 +512,7 @@ def left_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
         if no_trunc:
             chi2 = np.size(Y)
         else:
-            chi2 = np.sum(Y>1e-14)
+            chi2 = np.sum((Y/np.linalg.norm(Y))>1e-14)
 
         if chi is not None:
             chi2 = np.amin([chi2, chi])
