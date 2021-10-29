@@ -53,7 +53,7 @@ I plan to have disentangler: tensor --> tensor. So basically, having disentangle
 #### Target project
 - isoTNS with mosesmove
 - isoTNS with GD
-- applications with quantum circuits
+- applications with quantum circuits: See <https://github.com/ShHsLin/complexity_and_entanglement>
 
 
 #### TODO:
