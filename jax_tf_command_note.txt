@@ -1,0 +1,17 @@
+tf.abs jax.numpy.abs
+tf.reduce_sum jax.numpy.sum
+tf.math.log jax.numpy.log
+tf.math.pow jax.numpy.power
+tf.reshape jax.numpy.reshape
+tf.square jax.numpy.square
+tf.tensordot jax.numpy.tensordot
+tf.transpose jax.numpy.transpose
+
+
+different behavior
+tf.linalg.svd jax.nupmy.linalg.svd
+
+
+
+https://github.com/google/jax/blob/master/examples/mnist_classifier.py
+
