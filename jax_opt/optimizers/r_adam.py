@@ -5,7 +5,7 @@ from jax.experimental.optimizers import optimizer, make_schedule
 
 
 @optimizer
-def radam(step_size, manifold, b1=0.9, b2=0.999, eps=1e-8):
+def r_adam(step_size, manifold, b1=0.9, b2=0.999, eps=1e-8):
     """
     Construct optimizer triple for Adam.
     Args:

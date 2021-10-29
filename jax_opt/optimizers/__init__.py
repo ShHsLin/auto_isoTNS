@@ -1,3 +1,3 @@
-from jax_opt.optimizers.rsgd import rsgd
-from jax_opt.optimizers.rmomentum import rmomentum
-from jax_opt.optimizers.radam import radam
+from jax_opt.optimizers.r_sgd import r_sgd
+from jax_opt.optimizers.r_momentum import r_momentum
+from jax_opt.optimizers.r_adam import r_adam

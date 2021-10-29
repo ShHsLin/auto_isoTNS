@@ -5,7 +5,7 @@ from jax.experimental.optimizers import optimizer, make_schedule
 
 
 @optimizer
-def rsgd(step_size, manifold):
+def r_sgd(step_size, manifold):
     """Construct optimizer triple for stochastic gradient descent.
     Args:
         step_size: positive scalar, or a callable representing a step size schedule

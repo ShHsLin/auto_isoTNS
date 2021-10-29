@@ -5,7 +5,7 @@ from jax.experimental.optimizers import optimizer, make_schedule
 
 
 @optimizer
-def rmomentum(step_size, manifold, mass):
+def r_momentum(step_size, manifold, mass):
     """Construct optimizer triple for stochastic gradient descent.
     Args:
         step_size:
