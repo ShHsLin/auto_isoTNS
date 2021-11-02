@@ -75,7 +75,7 @@ def cost_function_kl_unnormalized(mps_mat_list, batch_config, batch_amp):
     '''
     mps_list = mat_2_mps(mps_mat_list)
     mps_unnorm_amp_array = mps_func.get_mps_amp_batch_jax(mps_list, batch_config)
-    mps_norm = jnp.sqrt(jnp.abs(mps_func.overlap_lpr(mps_list, mps_list)))
+    mps_norm = jnp.sqrt(jnp.abs(mps_func.overlap_lpr_jax(mps_list, mps_list)))
     mps_log_amp = jnp.log(mps_unnorm_amp_array / mps_norm)
     target_log_amp = jnp.log(batch_amp)
     kl_cost = 2 * jnp.mean(jnp.real(target_log_amp) - jnp.real(mps_log_amp))
@@ -157,7 +157,7 @@ def cost_function_joint_unnormlized(mps_mat_list, batch_config, batch_amp):
     mps_list = mat_2_mps(mps_mat_list)
 
     mps_unnorm_amp_array = mps_func.get_mps_amp_batch_jax(mps_list, batch_config)
-    mps_norm = jnp.sqrt(jnp.abs(mps_func.overlap_lpr(mps_list, mps_list)))
+    mps_norm = jnp.sqrt(jnp.abs(mps_func.overlap_lpr_jax(mps_list, mps_list)))
     mps_log_amp = jnp.log(mps_unnorm_amp_array / mps_norm)
 
     target_log_amp = jnp.log(batch_amp)
@@ -216,7 +216,7 @@ def cost_function_overlap_unnormalized(mps_mat_list, batch_config, batch_amp):
     mps_list = mat_2_mps(mps_mat_list)
 
     mps_unnorm_amp_array = mps_func.get_mps_amp_batch_jax(mps_list, batch_config)
-    mps_norm = jnp.sqrt(jnp.abs(mps_func.overlap_lpr(mps_list, mps_list)))
+    mps_norm = jnp.sqrt(jnp.abs(mps_func.overlap_lpr_jax(mps_list, mps_list)))
     mps_amp_array = mps_unnorm_amp_array / mps_norm
 
     # return -jnp.mean(jnp.real(mps_amp_array / batch_amp))
@@ -231,7 +231,7 @@ def cost_function_fidelity(mps_mat_list, exact_mps):
     '''
     mps_list = mat_2_mps(mps_mat_list)
     mps_list = mps_func.lpr_2_plr(mps_list)
-    overlap = mps_func.overlap(mps_list, exact_mps)
+    overlap = mps_func.overlap_jax(mps_list, exact_mps)
     return 1. - jnp.square(jnp.abs(overlap))
 
 
@@ -243,8 +243,8 @@ def cost_function_fidelity_unnormalized(mps_mat_list, exact_mps):
     '''
     mps_list = mat_2_mps(mps_mat_list)
     mps_list = mps_func.lpr_2_plr(mps_list)
-    overlap = mps_func.overlap(mps_list, exact_mps)
-    norm_square = mps_func.overlap_lpr(mps_list, mps_list)
+    overlap = mps_func.overlap_jax(mps_list, exact_mps)
+    norm_square = mps_func.overlap_lpr_jax(mps_list, mps_list)
     return 1. - overlap * jnp.conjugate(overlap) / norm_square
 
 
@@ -344,7 +344,7 @@ def training_r_sgd(mps_mat_list, X, Y, opt_type,
             mps_mat_list = get_params(opt_state)
             mps_list = mat_2_mps(mps_mat_list)
             mps_list = mps_func.lpr_2_plr(mps_list)
-            overlap = mps_func.overlap(mps_list, exact_mps)
+            overlap = mps_func.overlap_jax(mps_list, exact_mps)
             mps_list = mps_func.plr_2_lpr(mps_list)
             data_dict['fidelity'].append(np.abs(overlap)**2)
 
@@ -468,7 +468,7 @@ def training_sgd(mps_mat_list, X, Y, opt_type,
         # [TODO] to delete this
         # print("step : ", step, "cost : ", current_cost, current_cost_kl, current_cost_l2)
         # mps_list = mat_2_mps(get_params(opt_state))
-        # print("overlap, ... ", mps_func.overlap_lpr(mps_list, mps_list))
+        # print("overlap, ... ", mps_func.overlap_lpr_jax(mps_list, mps_list))
 
         cost_list.append(current_cost)
         cost_kl_list.append(current_cost_kl)
@@ -497,8 +497,8 @@ def training_sgd(mps_mat_list, X, Y, opt_type,
             # opt_state = opt_init(reset_mps_mat_list)  # [l, p, r]
 
 
-            overlap = mps_func.overlap(mps_list, exact_mps)
-            overlap = overlap / np.sqrt(np.abs(mps_func.overlap(mps_list, mps_list)))
+            overlap = mps_func.overlap_jax(mps_list, exact_mps)
+            overlap = overlap / np.sqrt(np.abs(mps_func.overlap_jax(mps_list, mps_list)))
             mps_list = mps_func.plr_2_lpr(mps_list)
             data_dict['fidelity'].append(np.abs(overlap)**2)
 
