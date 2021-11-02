@@ -98,27 +98,27 @@ if __name__ == '__main__':
     # ###################################################################
 
     ###################################################################
-    mps_mat_list, data_dict = supervised_mps.training_rsgd(mps_mat_list, X, Y,
-                                                           opt_type='radam', num_iter=300000,
+    mps_mat_list, data_dict = supervised_mps.training_r_sgd(mps_mat_list, X, Y,
+                                                           opt_type='r_adam', num_iter=300000,
                                                            batch_size=batch_size, lr=1e-2,
                                                            exact_mps=exact_mps,
                                                            data_dict=data_dict, T=T, chi=chi, ckpt_path=ckpt_path
                                                            )
-    mps_mat_list, data_dict = supervised_mps.training_rsgd(mps_mat_list, X, Y,
-                                                           opt_type='radam', num_iter=300000,
+    mps_mat_list, data_dict = supervised_mps.training_r_sgd(mps_mat_list, X, Y,
+                                                           opt_type='r_adam', num_iter=300000,
                                                            batch_size=batch_size, lr=1e-3,
                                                            exact_mps=exact_mps,
                                                            data_dict=data_dict, T=T, chi=chi, ckpt_path=ckpt_path
                                                            )
-    mps_mat_list, data_dict = supervised_mps.training_rsgd(mps_mat_list, X, Y,
-                                                           opt_type='radam', num_iter=300000,
+    mps_mat_list, data_dict = supervised_mps.training_r_sgd(mps_mat_list, X, Y,
+                                                           opt_type='r_adam', num_iter=300000,
                                                            batch_size=batch_size, lr=1e-4,
                                                            exact_mps=exact_mps,
                                                            data_dict=data_dict, T=T, chi=chi, ckpt_path=ckpt_path
                                                            )
 
     # mps_mat_list, cost_list = training_mps(mps_mat_list, exact_mps,
-    #                                        opt_type='radam', num_iter=1000, lr=1e-2)
+    #                                        opt_type='r_adam', num_iter=1000, lr=1e-2)
     np.save(ckpt_path + '/chi%d_T%.2f.npy' %
             (chi, T), mps_mat_list, allow_pickle=True)
     np.save(ckpt_path + '/data_dict.npy', data_dict, allow_pickle=True)

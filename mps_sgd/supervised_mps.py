@@ -247,7 +247,7 @@ def cost_function_fidelity_unnormalized(mps_mat_list, exact_mps):
     return 1. - overlap * jnp.conjugate(overlap) / norm_square
 
 
-def training_rsgd(mps_mat_list, X, Y, opt_type,
+def training_r_sgd(mps_mat_list, X, Y, opt_type,
                   num_iter=10000, lr=0.05, batch_size=512,
                   exact_mps=None, data_dict=None, T=None, chi=None, ckpt_path=None
                   ):
@@ -263,14 +263,14 @@ def training_rsgd(mps_mat_list, X, Y, opt_type,
     # manifold = jax_opt.manifolds.StiefelManifold()
     manifold = jax_opt.manifolds.StiefelManifold(
         metric='euclidean', retraction='svd')
-    if opt_type == 'rsgd':
-        opt_init, opt_update, get_params = jax_opt.optimizers.rsgd(
+    if opt_type == 'r_sgd':
+        opt_init, opt_update, get_params = jax_opt.optimizers.r_sgd(
             lr, manifold)
-    elif opt_type == 'rmom':
-        opt_init, opt_update, get_params = jax_opt.optimizers.rmomentum(
+    elif opt_type == 'r_mom':
+        opt_init, opt_update, get_params = jax_opt.optimizers.r_momentum(
             lr, manifold, 0.95)
-    elif opt_type == 'radam':
-        opt_init, opt_update, get_params = jax_opt.optimizers.radam(
+    elif opt_type == 'r_adam':
+        opt_init, opt_update, get_params = jax_opt.optimizers.r_adam(
             lr, manifold)
     else:
         raise NotImplementedError
@@ -552,14 +552,14 @@ def training_mps(mps_mat_list, exact_mps, opt_type,
     # manifold = jax_opt.manifolds.StiefelManifold()
     manifold = jax_opt.manifolds.StiefelManifold(
         metric='euclidean', retraction='svd')
-    if opt_type == 'rsgd':
-        opt_init, opt_update, get_params = jax_opt.optimizers.rsgd(
+    if opt_type == 'r_sgd':
+        opt_init, opt_update, get_params = jax_opt.optimizers.r_sgd(
             lr, manifold)
-    elif opt_type == 'rmom':
-        opt_init, opt_update, get_params = jax_opt.optimizers.rmomentum(
+    elif opt_type == 'r_mom':
+        opt_init, opt_update, get_params = jax_opt.optimizers.r_momentum(
             lr, manifold, 0.95)
-    elif opt_type == 'radam':
-        opt_init, opt_update, get_params = jax_opt.optimizers.radam(
+    elif opt_type == 'r_adam':
+        opt_init, opt_update, get_params = jax_opt.optimizers.r_adam(
             lr, manifold)
     else:
         raise NotImplementedError
