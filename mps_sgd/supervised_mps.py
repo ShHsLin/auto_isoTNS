@@ -1,6 +1,7 @@
-import sys
+import sys; sys.path.append('../../')
 sys.path.append('../')
-import mps_func
+import tensor_network_functions.mps_func as mps_func
+
 import numpy as np
 from jax import random
 import jax_opt.manifolds
@@ -51,7 +52,7 @@ def cost_function_kl(mps_mat_list, batch_config, batch_amp):
         cost
     '''
     mps_list = mat_2_mps(mps_mat_list)
-    mps_amp_array = mps_func.get_mps_amp_batch(mps_list, batch_config)
+    mps_amp_array = mps_func.get_mps_amp_batch_jax(mps_list, batch_config)
     mps_log_amp = jnp.log(mps_amp_array)
     target_log_amp = jnp.log(batch_amp)
     kl_cost = 2 * jnp.mean(jnp.real(target_log_amp) - jnp.real(mps_log_amp))
@@ -73,7 +74,7 @@ def cost_function_kl_unnormalized(mps_mat_list, batch_config, batch_amp):
         cost
     '''
     mps_list = mat_2_mps(mps_mat_list)
-    mps_unnorm_amp_array = mps_func.get_mps_amp_batch(mps_list, batch_config)
+    mps_unnorm_amp_array = mps_func.get_mps_amp_batch_jax(mps_list, batch_config)
     mps_norm = jnp.sqrt(jnp.abs(mps_func.overlap_lpr(mps_list, mps_list)))
     mps_log_amp = jnp.log(mps_unnorm_amp_array / mps_norm)
     target_log_amp = jnp.log(batch_amp)
@@ -94,7 +95,7 @@ def cost_function_l2(mps_mat_list, batch_config, batch_amp):
         cost
     '''
     mps_list = mat_2_mps(mps_mat_list)
-    mps_amp_array = mps_func.get_mps_amp_batch(mps_list, batch_config)
+    mps_amp_array = mps_func.get_mps_amp_batch_jax(mps_list, batch_config)
     mps_log_amp = jnp.log(mps_amp_array)
     target_log_amp = jnp.log(batch_amp)
     mps_phase = jnp.imag(mps_log_amp)
@@ -121,7 +122,7 @@ def cost_function_joint(mps_mat_list, batch_config, batch_amp):
     '''
     mps_list = mat_2_mps(mps_mat_list)
 
-    mps_amp_array = mps_func.get_mps_amp_batch(mps_list, batch_config)
+    mps_amp_array = mps_func.get_mps_amp_batch_jax(mps_list, batch_config)
 
     mps_log_amp = jnp.log(mps_amp_array)
     target_log_amp = jnp.log(batch_amp)
@@ -155,7 +156,7 @@ def cost_function_joint_unnormlized(mps_mat_list, batch_config, batch_amp):
     '''
     mps_list = mat_2_mps(mps_mat_list)
 
-    mps_unnorm_amp_array = mps_func.get_mps_amp_batch(mps_list, batch_config)
+    mps_unnorm_amp_array = mps_func.get_mps_amp_batch_jax(mps_list, batch_config)
     mps_norm = jnp.sqrt(jnp.abs(mps_func.overlap_lpr(mps_list, mps_list)))
     mps_log_amp = jnp.log(mps_unnorm_amp_array / mps_norm)
 
@@ -190,7 +191,7 @@ def cost_function_overlap(mps_mat_list, batch_config, batch_amp):
     '''
 
     mps_list = mat_2_mps(mps_mat_list)
-    mps_amp_array = mps_func.get_mps_amp_batch(mps_list, batch_config)
+    mps_amp_array = mps_func.get_mps_amp_batch_jax(mps_list, batch_config)
 
     # return -jnp.mean(jnp.real(mps_amp_array / batch_amp))
     return -(jnp.abs(jnp.mean(mps_amp_array / batch_amp))**2)
@@ -214,7 +215,7 @@ def cost_function_overlap_unnormalized(mps_mat_list, batch_config, batch_amp):
 
     mps_list = mat_2_mps(mps_mat_list)
 
-    mps_unnorm_amp_array = mps_func.get_mps_amp_batch(mps_list, batch_config)
+    mps_unnorm_amp_array = mps_func.get_mps_amp_batch_jax(mps_list, batch_config)
     mps_norm = jnp.sqrt(jnp.abs(mps_func.overlap_lpr(mps_list, mps_list)))
     mps_amp_array = mps_unnorm_amp_array / mps_norm
 

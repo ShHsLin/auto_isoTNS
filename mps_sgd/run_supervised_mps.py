@@ -1,6 +1,8 @@
+import sys; sys.path.append('../../')
+import tensor_network_functions.mps_func as mps_func
+
 import supervised_mps
 import parse_args
-import mps_func
 import os
 import numpy as np
 
@@ -84,11 +86,11 @@ if __name__ == '__main__':
     # for i in range((2**N_sys) // 1024):
     #     start_idx, end_idx = i*1024, (i+1)*1024
     #     # yi = Net.get_amp(X[start_idx:end_idx])
-    #     yi = mps_func.get_mps_amp_batch(mps_list, X[start_idx:end_idx,:,0].astype(int))
+    #     yi = mps_func.get_mps_amp_batch_jax(mps_list, X[start_idx:end_idx,:,0].astype(int))
     #     y_list.append(yi)
 
     # if end_idx != 2**N_sys:
-    #     yi = mps_func.get_mps_amp_batch(mps_list, X[end_idx:,:,0].astype(int))
+    #     yi = mps_func.get_mps_amp_batch_jax(mps_list, X[end_idx:,:,0].astype(int))
     #     y_list.append(yi)
 
     # y = np.concatenate(y_list)
