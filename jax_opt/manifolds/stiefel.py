@@ -1,6 +1,7 @@
 from jax_opt.manifolds import base_manifold
 import jax
 from jax_opt.manifolds.utils import adj
+import scipy.linalg
 jax.config.update('jax_enable_x64', True)
 
 
@@ -39,7 +40,7 @@ class StiefelManifold(base_manifold.Manifold):
         self.rank = 2
         self.quotient = False
         list_of_metrics = ['euclidean', 'canonical']
-        list_of_retractions = ['svd', 'cayley', 'qr']
+        list_of_retractions = ['svd', 'cayley', 'qr', 'exp']
 
         if metric not in list_of_metrics:
             raise ValueError("Incorrect metric")
@@ -148,6 +149,16 @@ class StiefelManifold(base_manifold.Manifold):
             sign = jax.numpy.sign(diag)[..., None, :]
             return q * sign
 
+        elif self._retraction == 'exp':
+            # X = W*A + W_\perp*B ; X <-- vec, W <-- u
+            X = vec
+            W = u
+            W_prep = scipy.linalg.null_space(W.T.conj())
+            A = W.T.conj().dot(X)
+            B = W_prep.T.conj().dot(X)
+            Q_X = X.dot(W.T.conj()) - W.dot(B.T.conj()).dot(W_prep.T.conj())
+            return scipy.linalg.expm(Q_X).dot(W)
+
     def vector_transport(self, u, vec1, vec2):
         """Returns a vector tranported along an another vector
         via vector transport.
@@ -165,8 +176,17 @@ class StiefelManifold(base_manifold.Manifold):
             complex valued tensor of shape (..., n, p),
             a set of transported vectors."""
 
-        new_u = self.retraction(u, vec2)
-        return self.proj(new_u, vec1)
+        if self._retraction == 'exp':
+            X = vec2
+            W = u
+            W_prep = scipy.linalg.null_space(W.T.conj())
+            A = W.T.conj().dot(X)
+            B = W_prep.T.conj().dot(X)
+            Q_X = X.dot(W.T.conj()) - W.dot(B.T.conj()).dot(W_prep.T.conj())
+            return scipy.linalg.expm(Q_X).dot(vec1)
+        else:
+            new_u = self.retraction(u, vec2)
+            return self.proj(new_u, vec1)
 
     def retraction_transport(self, u, vec1, vec2):
         """Performs a retraction and a vector transport simultaneously.
@@ -184,8 +204,18 @@ class StiefelManifold(base_manifold.Manifold):
             two complex valued tensors of shape (..., n, p),
             a set of transported points and vectors."""
 
-        new_u = self.retraction(u, vec2)
-        return new_u, self.proj(new_u, vec1)
+        if self._retraction == 'exp':
+            X = vec2
+            W = u
+            W_prep = scipy.linalg.null_space(W.T.conj())
+            A = W.T.conj().dot(X)
+            B = W_prep.T.conj().dot(X)
+            Q_X = X.dot(W.T.conj()) - W.dot(B.T.conj()).dot(W_prep.T.conj())
+            exp_Q_X = scipy.linalg.expm(Q_X)
+            return exp_Q_X.dot(W), exp_Q_X.dot(vec1)
+        else:
+            new_u = self.retraction(u, vec2)
+            return new_u, self.proj(new_u, vec1)
 
     def random(self, shape, rng_key, dtype=jax.numpy.complex64):
         """Returns a set of points from the complex Stiefel
