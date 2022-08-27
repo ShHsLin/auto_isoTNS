@@ -1,8 +1,8 @@
 import jax
 jax.config.update('jax_enable_x64', True)
 
-from jax.experimental.optimizers import optimizer, make_schedule
-
+#from jax.experimental.optimizers import optimizer, make_schedule
+from jax.example_libraries.optimizers import optimizer, make_schedule
 
 @optimizer
 def r_momentum(step_size, manifold, mass):
