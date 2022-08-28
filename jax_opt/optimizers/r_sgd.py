@@ -14,7 +14,7 @@ def r_sgd(step_size, manifold):
     Returns:
         An (init_fun, update_fun, get_params) triple.
     """
-    step_size = optax.constant_schedule(step_size)
+    step_size =. constant_schedule(step_size)
     def init(x0):
         return x0
 

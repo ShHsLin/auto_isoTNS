@@ -157,7 +157,7 @@ class StiefelManifold(base_manifold.Manifold):
             A = W.T.conj().dot(X)
             B = W_prep.T.conj().dot(X)
             Q_X = X.dot(W.T.conj()) - W.dot(B.T.conj()).dot(W_prep.T.conj())
-            return scipy.linalg.expm(Q_X).dot(W)
+            return jax.scipy.linalg.expm(Q_X).dot(W)
 
     def vector_transport(self, u, vec1, vec2):
         """Returns a vector tranported along an another vector
@@ -183,7 +183,7 @@ class StiefelManifold(base_manifold.Manifold):
             A = W.T.conj().dot(X)
             B = W_prep.T.conj().dot(X)
             Q_X = X.dot(W.T.conj()) - W.dot(B.T.conj()).dot(W_prep.T.conj())
-            return scipy.linalg.expm(Q_X).dot(vec1)
+            return jax.scipy.linalg.expm(Q_X).dot(vec1)
         else:
             new_u = self.retraction(u, vec2)
             return self.proj(new_u, vec1)
