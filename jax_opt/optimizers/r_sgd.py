@@ -1,8 +1,8 @@
 import jax
 jax.config.update('jax_enable_x64', True)
 
-from jax.experimental.optimizers import optimizer, make_schedule
-
+#from jax.experimental.optimizers import optimizer, make_schedule
+from jax.example_libraries.optimizers import optimizer, make_schedule
 
 @optimizer
 def r_sgd(step_size, manifold):
@@ -14,7 +14,7 @@ def r_sgd(step_size, manifold):
     Returns:
         An (init_fun, update_fun, get_params) triple.
     """
-    step_size = make_schedule(step_size)
+    step_size = optax.constant_schedule(step_size)
     def init(x0):
         return x0
 

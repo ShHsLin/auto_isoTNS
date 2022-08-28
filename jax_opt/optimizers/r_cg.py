@@ -1,7 +1,8 @@
 import jax
 jax.config.update('jax_enable_x64', True)
 
-from jax.experimental.optimizers import optimizer
+#from jax.experimental.optimizers import optimizer
+from jax.example_libraries.optimizers import optimizer
 
 
 @optimizer
